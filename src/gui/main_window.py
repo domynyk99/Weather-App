@@ -27,9 +27,14 @@ class MainWindow(QWidget):
 
     def update(self, data: dict) -> None:
         """Update method from Observer Pattern"""
-        self.location.setText(f"Location: {data["location"]}")
-        self.temperature.setText(f"Temperature: {data["temp_now"]}")
-        self.description.setText(f"Description: {data["description"]}")
+        unit_group = ""
+        match data['unit_group']:
+            case 'metric': unit_group = '°C'
+            case 'us': unit_group = '°F'
+            case 'base': unit_group = 'K'
+        self.location.setText(f"Location: {data['location']}")
+        self.temperature.setText(f"Temperature: {data['temp_now']}{unit_group}")
+        self.description.setText(f"Description: {data['description_now']}")
 
 if __name__ == "__main__":
     app = QApplication([])

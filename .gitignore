@@ -1,3 +1,6 @@
+#ignore response.json
+src/data/response.json
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
