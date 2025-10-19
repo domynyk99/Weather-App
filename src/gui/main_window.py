@@ -1,14 +1,16 @@
-import sys
 from PySide6.QtWidgets import (QWidget, QGroupBox, QVBoxLayout, QLabel, QFrame, QHBoxLayout,
                                QGridLayout, QScrollArea)
 from PySide6.QtCore import Qt
-from PySide6.QtGui import QPixmap, QImage
+from PySide6.QtGui import QPixmap
 from . import icon_selector
 
 class MainWindow(QWidget):
     def __init__(self):
         super().__init__()
         self.setMinimumSize(900, 600)
+        self.setWindowIcon(QPixmap('src/gui/icons/sun-50.png'))
+        self.setWindowTitle('Roadmap.sh: Weather API Project Solution - Dominik Kratz')
+        
         self.layout: QGridLayout = QGridLayout(self)
 
         self.main_box()
@@ -16,9 +18,11 @@ class MainWindow(QWidget):
         self.forecast_days_box()
         self.info_box()
 
-        print("MainWindow has been initialized!")
-
     def main_box(self) -> None:
+        """
+        Create the top-left group box containing the main weather information:
+        location, temperature, and description.
+        """
         groupbox = QGroupBox("")
         v_box = QVBoxLayout()
 
@@ -34,6 +38,10 @@ class MainWindow(QWidget):
         self.layout.addWidget(groupbox, 0, 0)
 
     def forecast_days_box(self):
+        """
+        Create the right group box displaying the temperature forecast
+        for the next 14 days.
+        """
         groupbox = QGroupBox("")
         v_box = QVBoxLayout()
 
@@ -51,6 +59,9 @@ class MainWindow(QWidget):
         self.layout.addWidget(groupbox, 0, 1, 3, 1)
     
     def _update_forecast_days(self, data: dict, unit_group: str) -> None:
+        """
+        Update the 14-day forecast box with data from the API response.
+        """
         for i, day in enumerate(self.forecast_days):
             date = data['forecast_days'][i]['datetime']
             temp_min = data['forecast_days'][i]['temp_min']
@@ -59,10 +70,17 @@ class MainWindow(QWidget):
             day.setText(f"{date}: {temp_min}{unit_group} to {temp_max}{unit_group} --- {conditions}")
 
     def forecast_hours_box(self) -> None:
+        """
+        Create the middle-left group box showing hourly temperature forecasts
+        for the 24 hours of the current day.
+
+        Initially, the labels are filled with placeholder values (10°C and a default icon).
+        The data is later updated in `_update_forecast_hours()` to reflect real-time values.
+        """
         groupbox = QGroupBox("")
         h_box = QHBoxLayout()
 
-        self.forecast_hours: list[(QLabel, QLabel, QLabel)] = []
+        self.forecast_hours: list[tuple[(QLabel, QLabel, QLabel)]] = []
         for i in range(24):
             gbox = QGroupBox()
             v_box = QVBoxLayout()
@@ -94,6 +112,9 @@ class MainWindow(QWidget):
         self.layout.addWidget(scroll, 1, 0)
 
     def _update_forecast_hours(self, data: dict, unit_group: str) -> None:
+        """
+        Update the hourly forecast box with real-time weather data.
+        """
         for i, hour in enumerate(self.forecast_hours):
             time = data['forecast_days'][0]['hours'][i]['time'][0:2]
             icon = icon_selector.select_icon(data['forecast_days'][0]['hours'][i]['icon'])
@@ -104,6 +125,12 @@ class MainWindow(QWidget):
             hour[2].setPixmap(QPixmap(icon).scaled(25,25, Qt.KeepAspectRatio, Qt.SmoothTransformation))
 
     def info_box(self) -> None:
+        """
+        Create the bottom-left group box displaying additional weather data
+        such as UV index and wind direction.
+
+        The labels are updated later via `_update_info_box()` to show real-time data.
+        """
         groupbox = QGroupBox("")
         grid = QGridLayout()
 
@@ -125,10 +152,20 @@ class MainWindow(QWidget):
         self.layout.addWidget(groupbox, 2, 0)
 
     def _update_info_box(self, data: dict, unit_group: str) -> None:
+        """
+        Update the additional information box (UV index, wind direction) with
+        real-time weather data.
+        """
         pass
 
     def update(self, data: dict) -> None:
-        """Update method from Observer Pattern"""
+        """
+        Observer pattern entry point.
+
+        Updates the entire GUI with new weather data from the API response,
+        including current temperature, description, hourly forecast, and
+        daily forecast.
+        """
         unit_group = ""
         match data['unit_group']:
             case 'metric': unit_group = '°C'

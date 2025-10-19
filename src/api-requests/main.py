@@ -1,11 +1,11 @@
 import sys
 from PySide6.QtWidgets import QApplication
-from .weather_api import WeatherAPI
+from .weather_api_request import WeatherAPIRequest
 from ..gui.main_window import MainWindow
 
 if __name__ == "__main__":
     base_url = "https://weather.visualcrossing.com/VisualCrossingWebServices/rest/services/timeline/"
-    weather_api = WeatherAPI(base_url)
+    weather_api = WeatherAPIRequest(base_url)
     
     app = QApplication(sys.argv)
     

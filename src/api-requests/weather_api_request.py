@@ -3,10 +3,15 @@ from datetime import datetime, timedelta
 import requests
 import json
 
-class WeatherAPI:
+class WeatherAPIRequest:
+    """
+    Handles API requests to the Visual Crossing Weather API, extracts relevant
+    weather data, and notifies all registered observers
+    """
     def __init__(self, base_url: str):
         self.observers = []
         
+        #The API key is stored in an .env file which is not pushed to github
         self.secrets = dotenv_values('.env')
         self.api_key = self.secrets['API_KEY']
 
@@ -15,10 +20,11 @@ class WeatherAPI:
         self.unit_group = 'metric' #default unit group setting
         self.total_days = 14
 
-
-        print("WeatherAPI class has been initialized.")
-
     def get_weather(self, location: str):
+        """
+        Fetch weather data for the given location over the next 14 days and
+        notify all observers with the extracted data.
+        """
         date_1 = datetime.now().strftime('%Y-%m-%d')
         date_2 = (datetime.now() + timedelta(days=self.total_days)).strftime('%Y-%m-%d')
         api_url = f"{self.base_url}{location}/{date_1}/{date_2}?key={self.api_key}"\
@@ -31,28 +37,30 @@ class WeatherAPI:
 
         data = response.json()
 
-        self._write_to_json(data)
-
-        # if u want to see what the extracted weather data looks like uncomment next line
-        # self._write_to_json2(self._extract_weather_data(data))
+        # if u want to see the whole API Response as a json uncomment this line
+        #self._write_to_json(data)
 
         self.notify_observers(self._extract_weather_data(data))
 
+        #if u want to see the API Response after extracting only the 'relevant' data uncomment this line
+        self._write_to_json(self._extract_weather_data(data))
+
     def _write_to_json(self, data: dict):
+        """
+        Write the given data dictionary to a JSON file under src/data/response.json.
+
+        Used primarily for debugging or inspecting API responses.
+        """
         try:
             with open('src/data/response.json', 'w') as f:
                 json.dump(data, f, indent=4)
         except Exception as e:
             print(f"ERROR: While trying to save the api GET request!\n{e}")
 
-    def _write_to_json2(self, data: dict):
-        try:
-            with open('src/data/data_response.json', 'w') as f:
-                json.dump(data, f, indent=4)
-        except Exception as e:
-            print(f"ERROR: While trying to save the api GET request!\n{e}")
-
     def _extract_weather_data(self, data: dict) -> dict:
+        """
+        Extract only relevant information from the raw API response.
+        """
         forecast_days = []
         for i in range(self.total_days):
             forecast_hours = []
@@ -91,6 +99,6 @@ class WeatherAPI:
 
 if __name__ == "__main__":
     base_url = "https://weather.visualcrossing.com/VisualCrossingWebServices/rest/services/timeline/"
-    weather_api = WeatherAPI(base_url)
+    weather_api = WeatherAPIRequest(base_url)
 
     weather_api.get_weather("Mannheim,Germany")
