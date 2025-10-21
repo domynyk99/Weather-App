@@ -60,7 +60,6 @@ I wanted to understand how to integrate API data into a GUI application, how to 
 ## Planned features / Future Improvements
 This app is still a work in progress and my next steps are:
 
-- Add a search bar to look up any city directly from the GUI  
 - Implement Redis caching to reduce repeated API requests  
 - Improve the layout and design of the GUI  
 - Add robust error handling for invalid city names or failed API requests
