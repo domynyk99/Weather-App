@@ -1,0 +1,14 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "Weather-App"
+version = "0.1"
+dependencies = ["pyside6>=6.10.0", "python-dotenv>=1.1.1", "requests>=2.32.5"]
+
+[project.scripts]
+weather="src.api_requests.__main__:main"
+
+[tool.setuptools.packages.find]
+where = ["."]

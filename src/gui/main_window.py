@@ -1,14 +1,19 @@
+import sys
+
 from PySide6.QtWidgets import (QWidget, QGroupBox, QVBoxLayout, QLabel, QFrame, QHBoxLayout,
                                QGridLayout, QScrollArea)
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QPixmap
+from PySide6.QtWidgets import QApplication
+
 from . import icon_selector
+from ..api_requests.weather_api_request import WeatherAPIRequest
 
 class MainWindow(QWidget):
     def __init__(self):
         super().__init__()
         self.setMinimumSize(900, 600)
-        self.setWindowIcon(QPixmap('src/gui/icons/sun-50.png'))
+        self.setWindowIcon(QPixmap('src/gui/icons/partly-cloudy-day.png'))
         self.setWindowTitle('Roadmap.sh: Weather API Project Solution - Dominik Kratz')
         
         self.layout: QGridLayout = QGridLayout(self)
@@ -88,7 +93,7 @@ class MainWindow(QWidget):
             time_label = QLabel(f"{i} AM")
             temp_label = QLabel("10°C")
             pixmap = QLabel()
-            pixmap.setPixmap(QPixmap("src/gui/icons/rainy-weather-50.png").scaled(30,30))
+            pixmap.setPixmap(QPixmap("src/gui/icons/rainy.png").scaled(30,30))
 
             time_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
             temp_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -116,7 +121,7 @@ class MainWindow(QWidget):
         Update the hourly forecast box with real-time weather data.
         """
         for i, hour in enumerate(self.forecast_hours):
-            time = data['forecast_days'][0]['hours'][i]['time'][0:2]
+            time = data['forecast_days'][0]['hours'][i]['time'][0:5]
             icon = icon_selector.select_icon(data['forecast_days'][0]['hours'][i]['icon'])
             temp = round(float(data['forecast_days'][0]['hours'][i]['temp']))
             
@@ -176,3 +181,17 @@ class MainWindow(QWidget):
         self.description.setText(f"Description: {data['forecast_days'][0]['description']}")
         self._update_forecast_days(data, unit_group)
         self._update_forecast_hours(data, unit_group)
+
+def main():
+    base_url = "https://weather.visualcrossing.com/VisualCrossingWebServices/rest/services/timeline/"
+    weather_api = WeatherAPIRequest(base_url)
+    
+    app = QApplication(sys.argv)
+    
+    gui = MainWindow()
+    gui.show()
+
+    weather_api.register_observer(gui)
+    weather_api.get_weather("Mannheim,Germany")
+    
+    sys.exit(app.exec())

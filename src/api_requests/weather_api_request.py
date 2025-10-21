@@ -96,9 +96,3 @@ class WeatherAPIRequest:
     def notify_observers(self, data: dict):
         for observer in self.observers:
             observer.update(data)
-
-if __name__ == "__main__":
-    base_url = "https://weather.visualcrossing.com/VisualCrossingWebServices/rest/services/timeline/"
-    weather_api = WeatherAPIRequest(base_url)
-
-    weather_api.get_weather("Mannheim,Germany")
