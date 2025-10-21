@@ -1,7 +1,7 @@
 import sys
 
 from PySide6.QtWidgets import (QWidget, QGroupBox, QVBoxLayout, QLabel, QFrame, QHBoxLayout,
-                               QGridLayout, QScrollArea)
+                               QGridLayout, QScrollArea, QLineEdit)
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QPixmap
 from PySide6.QtWidgets import QApplication
@@ -10,8 +10,10 @@ from . import icon_selector
 from ..api_requests.weather_api_request import WeatherAPIRequest
 
 class MainWindow(QWidget):
-    def __init__(self):
+    def __init__(self, weather_api: WeatherAPIRequest):
         super().__init__()
+        self.weather_api = weather_api
+        
         self.setMinimumSize(900, 600)
         self.setWindowIcon(QPixmap('src/gui/icons/partly-cloudy-day.png'))
         self.setWindowTitle('Roadmap.sh: Weather API Project Solution - Dominik Kratz')
@@ -19,6 +21,7 @@ class MainWindow(QWidget):
         self.layout: QGridLayout = QGridLayout(self)
 
         self.main_box()
+        self.search_bar()
         self.forecast_hours_box()
         self.forecast_days_box()
         self.info_box()
@@ -40,7 +43,26 @@ class MainWindow(QWidget):
         v_box.addWidget(self.description)
 
         groupbox.setLayout(v_box)
-        self.layout.addWidget(groupbox, 0, 0)
+        self.layout.addWidget(groupbox, 1, 0)
+
+    def search_bar(self):
+        """
+        Create the group box containing the search bar on the top of the frame
+        """
+
+        search_bar = QLineEdit()
+        search_bar.setPlaceholderText("London,UK")
+        search_bar.editingFinished.connect(lambda: self.search_weather(search_bar.text(), search_bar))
+
+        self.layout.addWidget(search_bar, 0, 0, 1, 2)
+
+    def search_weather(self, location: str, search_bar: QLineEdit):
+        """
+        Fetches the location typed into the search bar
+        """
+        if location is not None and location != "":
+            self.weather_api.get_weather(location)
+        search_bar.setText("")
 
     def forecast_days_box(self):
         """
@@ -61,17 +83,17 @@ class MainWindow(QWidget):
             self.forecast_days.append(day)
         
         groupbox.setLayout(v_box)
-        self.layout.addWidget(groupbox, 0, 1, 3, 1)
+        self.layout.addWidget(groupbox, 1, 1, 3, 1)
     
     def _update_forecast_days(self, data: dict, unit_group: str) -> None:
         """
         Update the 14-day forecast box with data from the API response.
         """
         for i, day in enumerate(self.forecast_days):
-            date = data['forecast_days'][i]['datetime']
-            temp_min = data['forecast_days'][i]['temp_min']
-            temp_max = data['forecast_days'][i]['temp_max']
-            conditions = data['forecast_days'][i]['conditions']
+            date = data['forecast_days'][i+1]['datetime']
+            temp_min = data['forecast_days'][i+1]['temp_min']
+            temp_max = data['forecast_days'][i+1]['temp_max']
+            conditions = data['forecast_days'][i+1]['conditions']
             day.setText(f"{date}: {temp_min}{unit_group} to {temp_max}{unit_group} --- {conditions}")
 
     def forecast_hours_box(self) -> None:
@@ -114,7 +136,7 @@ class MainWindow(QWidget):
         scroll.setWidget(groupbox)
         scroll.setWidgetResizable(True)
         scroll.setFixedHeight(130)
-        self.layout.addWidget(scroll, 1, 0)
+        self.layout.addWidget(scroll, 2, 0)
 
     def _update_forecast_hours(self, data: dict, unit_group: str) -> None:
         """
@@ -154,7 +176,7 @@ class MainWindow(QWidget):
         
         groupbox.setLayout(grid)
         groupbox.setAlignment(Qt.AlignmentFlag.AlignBaseline)
-        self.layout.addWidget(groupbox, 2, 0)
+        self.layout.addWidget(groupbox, 3, 0)
 
     def _update_info_box(self, data: dict, unit_group: str) -> None:
         """
@@ -177,7 +199,7 @@ class MainWindow(QWidget):
             case 'us': unit_group = '°F'
             case 'base': unit_group = 'K'
         self.location.setText(f"Location: {data['location']}")
-        self.temperature.setText(f"Temperature: {data['forecast_days'][0]['temp_now']}{unit_group}")
+        self.temperature.setText(f"Temperature: {data['current_conditions']['temp']}{unit_group}")
         self.description.setText(f"Description: {data['forecast_days'][0]['description']}")
         self._update_forecast_days(data, unit_group)
         self._update_forecast_hours(data, unit_group)
@@ -188,10 +210,10 @@ def main():
     
     app = QApplication(sys.argv)
     
-    gui = MainWindow()
+    gui = MainWindow(weather_api)
     gui.show()
 
-    weather_api.register_observer(gui)
-    weather_api.get_weather("Mannheim,Germany")
+    weather_api.register_subscriber(gui)
+    weather_api.get_weather("Frankfurt Main, Germany")
     
     sys.exit(app.exec())

@@ -6,10 +6,10 @@ import json
 class WeatherAPIRequest:
     """
     Handles API requests to the Visual Crossing Weather API, extracts relevant
-    weather data, and notifies all registered observers
+    weather data, and notifies all registered subscribers
     """
     def __init__(self, base_url: str):
-        self.observers = []
+        self.subscribers = []
         
         #The API key is stored in an .env file which is not pushed to github
         self.secrets = dotenv_values('.env')
@@ -18,17 +18,17 @@ class WeatherAPIRequest:
         self.base_url = base_url
 
         self.unit_group = 'metric' #default unit group setting
-        self.total_days = 14
+        self.total_days = 15
 
     def get_weather(self, location: str):
         """
         Fetch weather data for the given location over the next 14 days and
-        notify all observers with the extracted data.
+        notify all subscribers with the extracted data.
         """
         date_1 = datetime.now().strftime('%Y-%m-%d')
         date_2 = (datetime.now() + timedelta(days=self.total_days)).strftime('%Y-%m-%d')
         api_url = f"{self.base_url}{location}/{date_1}/{date_2}?key={self.api_key}"\
-            f"&unitGroup={self.unit_group}"
+            f"&unitGroup={self.unit_group}&include=current,hours"
     
         response = requests.get(api_url)
 
@@ -38,12 +38,12 @@ class WeatherAPIRequest:
         data = response.json()
 
         # if u want to see the whole API Response as a json uncomment this line
-        #self._write_to_json(data)
+        self._write_to_json(data)
 
-        self.notify_observers(self._extract_weather_data(data))
+        self.notify_subscribers(self._extract_weather_data(data))
 
         #if u want to see the API Response after extracting only the 'relevant' data uncomment this line
-        self._write_to_json(self._extract_weather_data(data))
+        #self._write_to_json(self._extract_weather_data(data))
 
     def _write_to_json(self, data: dict):
         """
@@ -86,13 +86,14 @@ class WeatherAPIRequest:
         
         return {
             'unit_group': self.unit_group, 
-            'location': data['address'],
+            'location': data['resolvedAddress'],
+            'current_conditions': data['currentConditions'],
             'forecast_days': forecast_days
         }
 
-    def register_observer(self, observer):
-        self.observers.append(observer)
+    def register_subscriber(self, subscriber):
+        self.subscribers.append(subscriber)
 
-    def notify_observers(self, data: dict):
-        for observer in self.observers:
-            observer.update(data)
+    def notify_subscribers(self, data: dict):
+        for subscriber in self.subscribers:
+            subscriber.update(data)
